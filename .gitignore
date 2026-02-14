@@ -1,0 +1,17 @@
+.DS_Store
+.env
+.config/
+.claude/
+.data/
+.glitch-assets
+.glitchdotcom.json
+.node-gyp
+node_modules
+package.json
+package-lock.json
+shrinkwrap.yaml
+server.js
+routes.js
+views/
+hull.js
+wicket.js

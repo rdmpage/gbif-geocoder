@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<title>GBIF geocoder</title>
+	<style type="text/css">
+		* { box-sizing: border-box; }
+		html, body {
+			margin: 0;
+			padding: 0;
+			height: 100%;
+			overflow: hidden;
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+			color: #333;
+			background: #f8f9fa;
+		}
+		header {
+			background: #fff;
+			border-bottom: 1px solid #dee2e6;
+			padding: 16px 24px;
+			display: flex;
+			align-items: center;
+			gap: 16px;
+			flex-wrap: wrap;
+		}
+		header h1 {
+			margin: 0;
+			font-size: 1.3em;
+			font-weight: 700;
+			white-space: nowrap;
+		}
+		.search-box {
+			display: flex;
+			align-items: stretch;
+			gap: 8px;
+			flex: 1;
+			min-width: 260px;
+		}
+		textarea {
+			flex: 1;
+			font-size: 0.9em;
+			font-family: inherit;
+			padding: 8px 10px;
+			border: 1px solid #ced4da;
+			border-radius: 6px;
+			resize: vertical;
+			min-height: 38px;
+			line-height: 1.4;
+		}
+		textarea:focus {
+			outline: none;
+			border-color: #1b6ec2;
+			box-shadow: 0 0 0 3px rgba(27,110,194,0.15);
+		}
+		button {
+			font-size: 0.95em;
+			font-family: inherit;
+			padding: 8px 20px;
+			background: #1b6ec2;
+			color: #fff;
+			border: none;
+			border-radius: 6px;
+			cursor: pointer;
+			font-weight: 600;
+			white-space: nowrap;
+		}
+		button:hover {
+			background: #155a9c;
+		}
+		button:active {
+			background: #104a80;
+		}
+		.description-bar {
+			padding: 6px 24px;
+			background: #f1f3f5;
+			border-bottom: 1px solid #dee2e6;
+			font-size: 0.8em;
+			color: #666;
+		}
+		.description-bar a {
+			color: #1b6ec2;
+			text-decoration: none;
+		}
+		.description-bar a:hover {
+			text-decoration: underline;
+		}
+		.info-bar {
+			display: flex;
+			align-items: center;
+			gap: 16px;
+			padding: 6px 24px;
+			background: #fff;
+			border-bottom: 1px solid #eee;
+			font-size: 0.85em;
+			color: #555;
+			min-height: 32px;
+		}
+		.info-bar a {
+			color: #1b6ec2;
+			text-decoration: none;
+			font-weight: 500;
+		}
+		.info-bar a:hover {
+			text-decoration: underline;
+		}
+		#map {
+			flex: 1;
+			width: 100%;
+			min-height: 0;
+		}
+		.mydivicon {
+			background: none !important;
+			border: none !important;
+			box-shadow: none !important;
+		}
+		.leaflet-popup-content {
+			font-size: 0.85em;
+			line-height: 1.5;
+		}
+		/* JSON API output mode */
+		.json-output {
+			margin: 0;
+			padding: 16px 24px;
+			font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+			font-size: 0.8em;
+			line-height: 1.5;
+			white-space: pre-wrap;
+			word-wrap: break-word;
+			background: #fff;
+			color: #333;
+		}
+
+		/* --- Dark mode --- */
+		@media (prefers-color-scheme: dark) {
+			html, body {
+				color: #e0e0e0;
+				background: #1a1a2e;
+			}
+			header {
+				background: #16213e;
+				border-bottom-color: #0f3460;
+			}
+			textarea {
+				background: #1a1a2e;
+				color: #e0e0e0;
+				border-color: #0f3460;
+			}
+			textarea:focus {
+				border-color: #4a9eed;
+				box-shadow: 0 0 0 3px rgba(74,158,237,0.25);
+			}
+			button {
+				background: #4a9eed;
+				color: #fff;
+			}
+			button:hover {
+				background: #3a8edc;
+			}
+			button:active {
+				background: #2a7ecb;
+			}
+			.description-bar {
+				background: #16213e;
+				border-bottom-color: #0f3460;
+				color: #999;
+			}
+			.description-bar a {
+				color: #4a9eed;
+			}
+			.info-bar {
+				background: #16213e;
+				border-bottom-color: #0f3460;
+				color: #aaa;
+			}
+			.info-bar a {
+				color: #4a9eed;
+			}
+			.leaflet-popup-content-wrapper {
+				background: #16213e !important;
+				color: #e0e0e0 !important;
+			}
+			.leaflet-popup-tip {
+				background: #16213e !important;
+			}
+			.leaflet-popup-content a {
+				color: #4a9eed !important;
+			}
+			.leaflet-popup-close-button {
+				color: #aaa !important;
+			}
+			.leaflet-popup-close-button:hover {
+				color: #e0e0e0 !important;
+			}
+			.json-output {
+				background: #1a1a2e;
+				color: #e0e0e0;
+			}
+			/* Leaflet controls */
+			.leaflet-control-zoom a {
+				background-color: #16213e !important;
+				color: #e0e0e0 !important;
+				border-color: #0f3460 !important;
+			}
+			.leaflet-control-zoom a:hover {
+				background-color: #0f3460 !important;
+			}
+			.leaflet-control-attribution {
+				background: rgba(22,33,62,0.8) !important;
+				color: #999 !important;
+			}
+			.leaflet-control-attribution a {
+				color: #4a9eed !important;
+			}
+		}
+	</style>
+
+	<!-- Leaflet -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.3/leaflet.css" />
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.3/leaflet.js"></script>
+
+	<!-- Turf.js (browser build) -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/4.7.3/turf.min.js"></script>
+
+	<!-- Local scripts -->
+	<script src="leaflet.latlng-graticule.js"></script>
+
+	<script>
+
+		// --- Latinize: map accented characters to ASCII equivalents ---
+		var latinize_map = {"A\u0301":"A","\u0102":"A","\u1EAE":"A","\u1EB6":"A","\u1EB0":"A","\u1EB2":"A","\u1EB4":"A","\u01CD":"A","\u00C2":"A","\u1EA4":"A","\u1EAC":"A","\u1EA6":"A","\u1EA8":"A","\u1EAA":"A","\u00C4":"A","\u01DE":"A","\u0226":"A","\u01E0":"A","\u1EA0":"A","\u0200":"A","\u00C0":"A","\u1EA2":"A","\u0202":"A","\u0100":"A","\u0104":"A","\u00C5":"A","\u01FA":"A","\u1E00":"A","\u023A":"A","\u00C3":"A","\u00C1":"A","\u00E1":"a","\u0103":"a","\u1EAF":"a","\u1EB7":"a","\u1EB1":"a","\u1EB3":"a","\u1EB5":"a","\u01CE":"a","\u00E2":"a","\u1EA5":"a","\u1EAD":"a","\u1EA7":"a","\u1EA9":"a","\u1EAB":"a","\u00E4":"a","\u01DF":"a","\u0227":"a","\u01E1":"a","\u1EA1":"a","\u0201":"a","\u00E0":"a","\u1EA3":"a","\u0203":"a","\u0101":"a","\u0105":"a","\u00E5":"a","\u01FB":"a","\u1E01":"a","\u2C65":"a","\u00E3":"a","\u00C9":"E","\u0114":"E","\u011A":"E","\u0228":"E","\u1E1C":"E","\u00CA":"E","\u1EBE":"E","\u1EC6":"E","\u1EC0":"E","\u1EC2":"E","\u1EC4":"E","\u1E18":"E","\u00CB":"E","\u0116":"E","\u1EB8":"E","\u0204":"E","\u00C8":"E","\u1EBA":"E","\u0206":"E","\u0112":"E","\u1E16":"E","\u1E14":"E","\u0118":"E","\u0246":"E","\u1EBC":"E","\u1E1A":"E","\u00E9":"e","\u0115":"e","\u011B":"e","\u0229":"e","\u1E1D":"e","\u00EA":"e","\u1EBF":"e","\u1EC7":"e","\u1EC1":"e","\u1EC3":"e","\u1EC5":"e","\u1E19":"e","\u00EB":"e","\u0117":"e","\u1EB9":"e","\u0205":"e","\u00E8":"e","\u1EBB":"e","\u0207":"e","\u0113":"e","\u1E17":"e","\u1E15":"e","\u0119":"e","\u0247":"e","\u1EBD":"e","\u1E1B":"e","\u00CD":"I","\u012C":"I","\u01CF":"I","\u00CE":"I","\u00CF":"I","\u1E2E":"I","\u0130":"I","\u1ECA":"I","\u0208":"I","\u00CC":"I","\u1EC8":"I","\u020A":"I","\u012A":"I","\u012E":"I","\u0197":"I","\u0128":"I","\u1E2C":"I","\u00ED":"i","\u012D":"i","\u01D0":"i","\u00EE":"i","\u00EF":"i","\u1E2F":"i","\u1ECB":"i","\u0209":"i","\u00EC":"i","\u1EC9":"i","\u020B":"i","\u012B":"i","\u012F":"i","\u0268":"i","\u0129":"i","\u1E2D":"i","\u00D3":"O","\u014E":"O","\u01D1":"O","\u00D4":"O","\u1ED0":"O","\u1ED8":"O","\u1ED2":"O","\u1ED4":"O","\u1ED6":"O","\u00D6":"O","\u022A":"O","\u022E":"O","\u0230":"O","\u1ECC":"O","\u0150":"O","\u020C":"O","\u00D2":"O","\u1ECE":"O","\u01A0":"O","\u1EDA":"O","\u1EE2":"O","\u1EDC":"O","\u1EDE":"O","\u1EE0":"O","\u020E":"O","\u014C":"O","\u1E52":"O","\u1E50":"O","\u019F":"O","\u01EA":"O","\u01EC":"O","\u00D8":"O","\u01FE":"O","\u00D5":"O","\u1E4C":"O","\u1E4E":"O","\u022C":"O","\u00F3":"o","\u014F":"o","\u01D2":"o","\u00F4":"o","\u1ED1":"o","\u1ED9":"o","\u1ED3":"o","\u1ED5":"o","\u1ED7":"o","\u00F6":"o","\u022B":"o","\u022F":"o","\u0231":"o","\u1ECD":"o","\u0151":"o","\u020D":"o","\u00F2":"o","\u1ECF":"o","\u01A1":"o","\u1EDB":"o","\u1EE3":"o","\u1EDD":"o","\u1EDF":"o","\u1EE1":"o","\u020F":"o","\u014D":"o","\u1E53":"o","\u1E51":"o","\u01EB":"o","\u01ED":"o","\u00F8":"o","\u01FF":"o","\u00F5":"o","\u1E4D":"o","\u1E4F":"o","\u022D":"o","\u00DA":"U","\u016C":"U","\u01D3":"U","\u00DB":"U","\u1E76":"U","\u00DC":"U","\u01D7":"U","\u01D9":"U","\u01DB":"U","\u01D5":"U","\u1E72":"U","\u1EE4":"U","\u0170":"U","\u0214":"U","\u00D9":"U","\u1EE6":"U","\u01AF":"U","\u1EE8":"U","\u1EF0":"U","\u1EEA":"U","\u1EEC":"U","\u1EEE":"U","\u0216":"U","\u016A":"U","\u1E7A":"U","\u0172":"U","\u016E":"U","\u0168":"U","\u1E78":"U","\u1E74":"U","\u00FA":"u","\u016D":"u","\u01D4":"u","\u00FB":"u","\u1E77":"u","\u00FC":"u","\u01D8":"u","\u01DA":"u","\u01DC":"u","\u01D6":"u","\u1E73":"u","\u1EE5":"u","\u0171":"u","\u0215":"u","\u00F9":"u","\u1EE7":"u","\u01B0":"u","\u1EE9":"u","\u1EF1":"u","\u1EEB":"u","\u1EED":"u","\u1EEF":"u","\u0217":"u","\u016B":"u","\u1E7B":"u","\u0173":"u","\u016F":"u","\u0169":"u","\u1E79":"u","\u1E75":"u","\u00DD":"Y","\u0176":"Y","\u0178":"Y","\u1E8E":"Y","\u1EF4":"Y","\u1EF2":"Y","\u01B3":"Y","\u1EF6":"Y","\u1EFE":"Y","\u0232":"Y","\u024E":"Y","\u1EF8":"Y","\u00FD":"y","\u0177":"y","\u00FF":"y","\u1E8F":"y","\u1EF5":"y","\u1EF3":"y","\u01B4":"y","\u1EF7":"y","\u1EFF":"y","\u0233":"y","\u024F":"y","\u1EF9":"y","\u0106":"C","\u010C":"C","\u00C7":"C","\u1E08":"C","\u0108":"C","\u010A":"C","\u0188":"C","\u023B":"C","\u0107":"c","\u010D":"c","\u00E7":"c","\u1E09":"c","\u0109":"c","\u0255":"c","\u010B":"c","\u0189":"D","\u010E":"D","\u1E10":"D","\u1E12":"D","\u1E0A":"D","\u1E0C":"D","\u018A":"D","\u1E0E":"D","\u0110":"D","\u018C":"D","\u010F":"d","\u1E11":"d","\u1E13":"d","\u1E0B":"d","\u1E0D":"d","\u1E0F":"d","\u0111":"d","\u0192":"F","\u011C":"G","\u011E":"G","\u01E6":"G","\u0122":"G","\u0120":"G","\u01A4":"G","\u1E20":"G","\u01E4":"G","\u01F4":"G","\u011D":"g","\u011F":"g","\u01E7":"g","\u0123":"g","\u0121":"g","\u01A5":"g","\u1E21":"g","\u01E5":"g","\u01F5":"g","\u1E2A":"H","\u021E":"H","\u1E28":"H","\u0124":"H","\u2C67":"H","\u1E26":"H","\u1E22":"H","\u1E24":"H","\u0126":"H","\u1E2B":"h","\u021F":"h","\u1E29":"h","\u0125":"h","\u2C68":"h","\u1E27":"h","\u1E23":"h","\u1E25":"h","\u0127":"h","\u0134":"J","\u0248":"J","\u0135":"j","\u0249":"j","\u1E30":"K","\u01E8":"K","\u0136":"K","\u2C69":"K","\uA742":"K","\u1E32":"K","\u0198":"K","\u1E34":"K","\uA740":"K","\uA744":"K","\u1E31":"k","\u01E9":"k","\u0137":"k","\u2C6A":"k","\uA743":"k","\u1E33":"k","\u0199":"k","\u1E35":"k","\uA741":"k","\uA745":"k","\u0139":"L","\u019A":"L","\u013D":"L","\u013B":"L","\u1E3C":"L","\u1E36":"L","\u1E38":"L","\u2C60":"L","\uA748":"L","\u1E3A":"L","\u013F":"L","\u2C62":"L","\u0141":"L","\u013A":"l","\u019B":"l","\u013E":"l","\u013C":"l","\u1E3D":"l","\u1E37":"l","\u1E39":"l","\u2C61":"l","\uA749":"l","\u1E3B":"l","\u0140":"l","\u026B":"l","\u0142":"l","\u1E3E":"M","\u1E40":"M","\u1E42":"M","\u0271":"M","\u1E3F":"m","\u1E41":"m","\u1E43":"m","\u0143":"N","\u0147":"N","\u0145":"N","\u1E4A":"N","\u1E44":"N","\u1E46":"N","\u01F8":"N","\u0220":"N","\u1E48":"N","\u00D1":"N","\u0144":"n","\u0148":"n","\u0146":"n","\u1E4B":"n","\u1E45":"n","\u1E47":"n","\u01F9":"n","\u0221":"n","\u1E49":"n","\u00F1":"n","\u0154":"R","\u0158":"R","\u0156":"R","\u1E58":"R","\u1E5A":"R","\u1E5C":"R","\u0210":"R","\u0212":"R","\u1E5E":"R","\u024C":"R","\u024D":"R","\u0155":"r","\u0159":"r","\u0157":"r","\u1E59":"r","\u1E5B":"r","\u1E5D":"r","\u0211":"r","\u0213":"r","\u1E5F":"r","\u015A":"S","\u1E64":"S","\u0160":"S","\u1E66":"S","\u015E":"S","\u015C":"S","\u0218":"S","\u1E60":"S","\u1E62":"S","\u1E68":"S","\u015B":"s","\u1E65":"s","\u0161":"s","\u1E67":"s","\u015F":"s","\u015D":"s","\u0219":"s","\u1E61":"s","\u1E63":"s","\u1E69":"s","\u0164":"T","\u0162":"T","\u1E70":"T","\u021A":"T","\u023E":"T","\u1E6A":"T","\u1E6C":"T","\u01AC":"T","\u1E6E":"T","\u0166":"T","\u0165":"t","\u0163":"t","\u1E71":"t","\u021B":"t","\u1E97":"t","\u2C66":"t","\u1E6B":"t","\u1E6D":"t","\u01AD":"t","\u1E6F":"t","\u0167":"t","\u1E7C":"V","\u1E7E":"V","\u01B2":"V","\u1E7D":"v","\u1E7F":"v","\u028B":"v","\u1E82":"W","\u0174":"W","\u1E84":"W","\u1E86":"W","\u1E88":"W","\u1E80":"W","\u1E83":"w","\u0175":"w","\u1E85":"w","\u1E87":"w","\u1E89":"w","\u1E81":"w","\u1E8C":"X","\u1E8A":"X","\u1E8D":"x","\u1E8B":"x","\u0179":"Z","\u017D":"Z","\u1E90":"Z","\u2C6B":"Z","\u017B":"Z","\u1E92":"Z","\u0224":"Z","\u1E94":"Z","\u01B5":"Z","\u017A":"z","\u017E":"z","\u1E91":"z","\u2C6C":"z","\u017C":"z","\u1E93":"z","\u0225":"z","\u1E95":"z","\u01B6":"z","\u00C6":"AE","\u01FC":"AE","\u01E2":"AE","\u00E6":"ae","\u01FD":"ae","\u01E3":"ae","\u0152":"OE","\u0153":"oe","\u0132":"IJ","\u0133":"ij","\u00DF":"ss","\u1E9E":"SS"};
+
+		function latinize(str) {
+			return str.replace(/[^\u0000-\u007E]/g, function(ch) {
+				return latinize_map[ch] || ch;
+			});
+		}
+
+		// --- String cleaning ---
+		function clean_string(s) {
+			s = s.replace(/[:|\-|\.|,|;|\(|\)|\?|\/]/g, ' ');
+			s = s.replace(/<\/?[^>]+>/ig, '');
+			s = s.replace(/\s\s+/ig, ' ').trim();
+			s = latinize(s);
+			s = s.toLowerCase();
+			return s;
+		}
+
+		// --- Unique non-empty array ---
+		function uniqueArray(arr) {
+			var seen = {};
+			return arr.filter(function(v) {
+				if (v === '' || seen[v]) return false;
+				seen[v] = true;
+				return true;
+			});
+		}
+
+		// --- Stop words for geographic matching ---
+		var STOP_WORDS = {'la':1, 'le':1, 'les':1, 'el':1, 'de':1, 'del':1, 'des':1,
+			'from':1, 'in':1, 'of':1, 'the':1, 'and':1, 'or':1, 'a':1, 'an':1, '&':1};
+
+		function removeStopWords(arr) {
+			return arr.filter(function(w) { return !STOP_WORDS[w]; });
+		}
+
+		// --- Levenshtein edit distance ---
+		function editDistance(a, b) {
+			if (a === b) return 0;
+			var m = a.length, n = b.length;
+			var d = [];
+			for (var i = 0; i <= m; i++) {
+				d[i] = [i];
+			}
+			for (var j = 0; j <= n; j++) {
+				d[0][j] = j;
+			}
+			for (var i = 1; i <= m; i++) {
+				for (var j = 1; j <= n; j++) {
+					var cost = a[i - 1] === b[j - 1] ? 0 : 1;
+					d[i][j] = Math.min(
+						d[i - 1][j] + 1,
+						d[i][j - 1] + 1,
+						d[i - 1][j - 1] + cost
+					);
+				}
+			}
+			return d[m][n];
+		}
+
+		// --- Fuzzy word similarity (1.0 = exact, 0.0 = totally different) ---
+		function wordSimilarity(a, b) {
+			if (a === b) return 1.0;
+			var maxLen = Math.max(a.length, b.length);
+			if (maxLen === 0) return 1.0;
+			return 1.0 - (editDistance(a, b) / maxLen);
+		}
+
+		// --- Geographic hierarchy levels with specificity weights ---
+		// More specific levels get higher weight
+		var GEO_LEVELS = [
+			{ key: 'continent',      weight: 0.1, layer: 'continent' },
+			{ key: 'country',        weight: 0.2, layer: 'country' },
+			{ key: 'waterBody',      weight: 0.5, layer: 'water_body' },
+			{ key: 'islandGroup',    weight: 0.5, layer: 'island_group' },
+			{ key: 'island',         weight: 0.6, layer: 'island' },
+			{ key: 'stateProvince',  weight: 0.5, layer: 'region' },
+			{ key: 'county',         weight: 0.6, layer: 'county' },
+			{ key: 'municipality',   weight: 0.7, layer: 'locality' },
+			{ key: 'locality',       weight: 1.0, layer: 'locality' }
+		];
+
+		// Fuzzy threshold: below this similarity, don't count as a match
+		var FUZZY_THRESHOLD = 0.7;
+
+		// --- Compute confidence score for a GBIF result against query ---
+		function computeConfidence(queryWords, result) {
+			var qset = removeStopWords(queryWords);
+			if (qset.length === 0) return { confidence: 0, matched_terms: [], layer: 'unknown' };
+
+			// Build hit words per geographic level
+			var allHitWords = [];
+			var bestLayer = 'unknown';
+			var bestLayerWeight = 0;
+			var matchedTerms = [];
+			var totalWeightedMatches = 0;
+			var totalPossibleWeight = 0;
+
+			// For each query word, find best match across all geo levels
+			for (var qi = 0; qi < qset.length; qi++) {
+				var qword = qset[qi];
+				var bestSim = 0;
+				var bestWeight = 0;
+				var bestMatchedIn = '';
+
+				for (var li = 0; li < GEO_LEVELS.length; li++) {
+					var level = GEO_LEVELS[li];
+					var value = result[level.key];
+					if (!value) continue;
+
+					var hwords = removeStopWords(
+						uniqueArray(clean_string(value).split(/\s+/))
+					);
+
+					for (var hi = 0; hi < hwords.length; hi++) {
+						var sim = wordSimilarity(qword, hwords[hi]);
+						// Weight the similarity by geographic specificity
+						var weightedSim = sim * level.weight;
+						if (sim >= FUZZY_THRESHOLD && weightedSim > bestSim * bestWeight) {
+							bestSim = sim;
+							bestWeight = level.weight;
+							bestMatchedIn = level.layer;
+						}
+					}
+				}
+
+				if (bestSim >= FUZZY_THRESHOLD) {
+					totalWeightedMatches += bestSim * bestWeight;
+					matchedTerms.push(qword);
+					if (bestWeight > bestLayerWeight) {
+						bestLayerWeight = bestWeight;
+						bestLayer = bestMatchedIn;
+					}
+				}
+				totalPossibleWeight += 1.0; // max possible weight per query term
+			}
+
+			// --- Component scores ---
+
+			// 1. Query coordination: fraction of query terms that matched something
+			var coordination = matchedTerms.length / qset.length;
+
+			// 2. Weighted specificity score: how well did matches cover specific levels?
+			var maxPossibleWeighted = 0;
+			for (var qi = 0; qi < qset.length; qi++) {
+				maxPossibleWeighted += 1.0; // max weight=1.0 (locality)
+			}
+			var specificityScore = maxPossibleWeighted > 0 ? totalWeightedMatches / maxPossibleWeighted : 0;
+
+			// 3. Jaccard-like penalty: penalise hits with lots of unmatched extra terms
+			var allHitSet = [];
+			for (var li = 0; li < GEO_LEVELS.length; li++) {
+				var value = result[GEO_LEVELS[li].key];
+				if (value) {
+					var words = removeStopWords(uniqueArray(clean_string(value).split(/\s+/)));
+					for (var wi = 0; wi < words.length; wi++) {
+						if (allHitSet.indexOf(words[wi]) === -1) allHitSet.push(words[wi]);
+					}
+				}
+			}
+			var unionSize = qset.length + allHitSet.length - matchedTerms.length;
+			var jaccard = unionSize > 0 ? matchedTerms.length / unionSize : 0;
+
+			// Combined confidence: weighted blend
+			var confidence = 0.5 * coordination + 0.3 * specificityScore + 0.2 * jaccard;
+
+			// Clamp to [0, 1]
+			confidence = Math.max(0, Math.min(1, confidence));
+
+			return {
+				confidence: Math.round(confidence * 1000) / 1000,
+				coordination: Math.round(coordination * 1000) / 1000,
+				specificity: Math.round(specificityScore * 1000) / 1000,
+				jaccard: Math.round(jaccard * 1000) / 1000,
+				matched_terms: matchedTerms,
+				layer: bestLayer
+			};
+		}
+
+		// --- Map variables ---
+		var map;
+		var geojsonLayer = null;
+		// Create a marker icon scaled by confidence (0–1)
+		// Size ranges from 10px (low confidence) to 24px (high confidence)
+		function makeIcon(confidence) {
+			var c = confidence || 0;
+			var size = Math.round(10 + 14 * c);
+			var opacity = (0.55 + 0.45 * c).toFixed(2);
+			return L.divIcon({
+				className: 'mydivicon',
+				iconSize: [size, size],
+				iconAnchor: [size / 2, size / 2],
+				html: '<div style="pointer-events:none;width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:#1b6ec2;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.3);opacity:' + opacity + '"></div>'
+			});
+		}
+
+		// --- Build popup HTML from clean Pelias-style properties ---
+		function buildPopup(props) {
+			var html = '<b>' + (props.label || props.name || '') + '</b>';
+			html += '<br/><span style="color:#666">' + props.layer + '</span>';
+			html += ' &middot; confidence: <b>' + props.confidence + '</b>';
+			if (props.matched_terms && props.matched_terms.length > 0) {
+				html += '<br/>matched: ' + props.matched_terms.join(', ');
+			}
+			if (props.source_id) {
+				html += '<br/><a href="https://gbif.org/occurrence/' + props.source_id
+					+ '" target="_blank">' + props.source_id + '</a>';
+			}
+			if (props.coordinate_uncertainty_m) {
+				if (props.coordinate_uncertainty_m >= 1000) {
+					html += '<br/>uncertainty: ' + Math.round(props.coordinate_uncertainty_m / 1000) + ' km';
+				} else {
+					html += '<br/>uncertainty: ' + Math.round(props.coordinate_uncertainty_m) + ' m';
+				}
+			}
+			return html;
+		}
+
+		function onEachFeature(feature, layer) {
+			if (feature.properties && feature.properties.confidence !== undefined) {
+				layer.bindPopup(buildPopup(feature.properties));
+			}
+		}
+
+		function create_map() {
+			map = new L.Map('map');
+			var osmUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+			var osmAttrib = 'Map data &copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors';
+			var osm = new L.TileLayer(osmUrl, {minZoom: 1, maxZoom: 14, attribution: osmAttrib});
+			map.setView(new L.LatLng(0, 0), 4);
+			map.addLayer(osm);
+
+			L.latlngGraticule({
+				showLabel: true,
+				zoomInterval: [
+					{start: 2, end: 3, interval: 30},
+					{start: 4, end: 4, interval: 10},
+					{start: 5, end: 7, interval: 5},
+					{start: 8, end: 10, interval: 1}
+				]
+			}).addTo(map);
+		}
+
+		function clear_map() {
+			if (geojsonLayer) {
+				map.removeLayer(geojsonLayer);
+			}
+		}
+
+		function add_data(data) {
+			geojsonLayer = L.geoJson(data, {
+				pointToLayer: function (feature, latlng) {
+					var conf = (feature.properties && feature.properties.confidence) || 0;
+					return L.marker(latlng, {icon: makeIcon(conf)});
+				},
+				style: function (feature) {
+					return feature.properties && feature.properties.style;
+				},
+				onEachFeature: onEachFeature,
+			}).addTo(map);
+
+			geojsonLayer.on('mouseover', function (e) {
+				e.layer.openPopup();
+			});
+
+			// Use the pre-computed bbox to fit the map
+			if (data.bbox) {
+				var bounds = L.latLngBounds(
+					L.latLng(data.bbox[1], data.bbox[0]),
+					L.latLng(data.bbox[3], data.bbox[2])
+				);
+				map.fitBounds(bounds, { padding: [20, 20] });
+			}
+		}
+
+		// --- Build the geographic label from hierarchy (most general to most specific) ---
+		function buildLabel(result) {
+			var parts = [];
+			var labelKeys = ['locality', 'municipality', 'county', 'stateProvince',
+				'island', 'islandGroup', 'waterBody', 'country', 'continent'];
+			for (var i = 0; i < labelKeys.length; i++) {
+				if (result[labelKeys[i]]) {
+					parts.push(result[labelKeys[i]]);
+				}
+			}
+			return parts.join(', ');
+		}
+
+		// --- Find the most specific geographic name available ---
+		function findMostSpecificName(result) {
+			var nameKeys = ['locality', 'municipality', 'county', 'stateProvince',
+				'island', 'islandGroup', 'waterBody', 'country', 'continent'];
+			for (var i = 0; i < nameKeys.length; i++) {
+				if (result[nameKeys[i]]) return result[nameKeys[i]];
+			}
+			return '';
+		}
+
+		// --- Search GBIF directly from the browser ---
+		function search_gbif(search) {
+			var cleaned = search.replace(/\n/g, ' ').replace(/[:]/g, ' ').replace(/\s\s+/g, ' ').trim();
+			var queryWords = uniqueArray(clean_string(cleaned).split(/\s+/));
+
+			var url = 'https://api.gbif.org/v1/occurrence/search?q=' + encodeURIComponent(latinize(cleaned))
+				+ '&hasCoordinate=true'
+				+ '&hasGeospatialIssue=false'
+				+ '&limit=10';
+
+			return fetch(url)
+				.then(function(response) { return response.json(); })
+				.then(function(data) {
+					var geojson = {
+						geocoding: {
+							query: cleaned,
+							version: '0.2'
+						},
+						type: "FeatureCollection",
+						features: []
+					};
+
+					for (var i = 0; i < data.results.length; i++) {
+						var r = data.results[i];
+
+						// Compute confidence score
+						var score = computeConfidence(queryWords, r);
+
+						// Build Pelias-style properties
+						var props = {
+							source: 'gbif',
+							source_id: String(r.key),
+							name: findMostSpecificName(r),
+							label: buildLabel(r),
+							confidence: score.confidence,
+							match_type: score.coordination >= 1.0 ? 'exact' : 'partial',
+							layer: score.layer,
+							matched_terms: score.matched_terms,
+							// Score components (useful for debugging/tuning)
+							coordination: score.coordination,
+							specificity: score.specificity,
+							jaccard: score.jaccard
+						};
+
+						// Geographic hierarchy
+						if (r.continent)     props.continent = r.continent;
+						if (r.country)       props.country = r.country;
+						if (r.countryCode)   props.country_code = r.countryCode;
+						if (r.stateProvince) props.region = r.stateProvince;
+						if (r.county)        props.county = r.county;
+						if (r.municipality)  props.municipality = r.municipality;
+						if (r.locality)      props.locality = r.locality;
+						if (r.waterBody)     props.water_body = r.waterBody;
+						if (r.island)        props.island = r.island;
+						if (r.islandGroup)   props.island_group = r.islandGroup;
+
+						// Coordinate metadata
+						if (r.coordinateUncertaintyInMeters) {
+							props.coordinate_uncertainty_m = r.coordinateUncertaintyInMeters;
+						}
+
+						var feature = {
+							type: "Feature",
+							geometry: {
+								type: "Point",
+								coordinates: [r.decimalLongitude, r.decimalLatitude]
+							},
+							properties: props
+						};
+						geojson.features.push(feature);
+					}
+
+					// Sort by confidence descending
+					geojson.features.sort(function(a, b) {
+						return b.properties.confidence - a.properties.confidence;
+					});
+
+					// Post-process: compute bbox from points and optional bounding circle
+					if (geojson.features.length > 0) {
+						var minx = 180, miny = 90, maxx = -180, maxy = -90;
+						for (var j = 0; j < geojson.features.length; j++) {
+							var coords = geojson.features[j].geometry.coordinates;
+							minx = Math.min(minx, coords[0]);
+							miny = Math.min(miny, coords[1]);
+							maxx = Math.max(maxx, coords[0]);
+							maxy = Math.max(maxy, coords[1]);
+						}
+						geojson.bbox = [minx, miny, maxx, maxy];
+
+						// Add bounding circle as a visual aid (separate from data features)
+						var centre = turf.centerOfMass(geojson);
+						var radius = 0;
+						for (var j = 0; j < geojson.features.length; j++) {
+							radius = Math.max(radius, turf.distance(centre, geojson.features[j]));
+						}
+						if (radius > 0) {
+							var circle = turf.circle(centre, radius);
+							if (circle) {
+								circle.properties.style = { color: "#1b6ec2", weight: 2, fillColor: "#1b6ec2", "fill-opacity": 0.15 };
+								circle.properties._visual = true; // mark as non-data feature
+								geojson.features.push(circle);
+							}
+						}
+					}
+
+					return geojson;
+				});
+		}
+
+		function show_map(q) {
+			search_gbif(q).then(function(data) {
+				// Count data features (exclude visual aids like bounding circle)
+				var dataFeatures = data.features.filter(function(f) {
+					return !f.properties._visual;
+				});
+				if (dataFeatures.length > 0) {
+					document.getElementById('status').innerHTML =
+						'Done — ' + dataFeatures.length + ' results';
+					add_data(data);
+
+					// Build API link as a GeoJSON blob (data features only)
+					var apiData = {
+						geocoding: data.geocoding,
+						type: "FeatureCollection",
+						bbox: data.bbox,
+						features: dataFeatures
+					};
+					var blob = new Blob(
+						[JSON.stringify(apiData, null, 2)],
+						{ type: 'application/geo+json' }
+					);
+					var blobUrl = URL.createObjectURL(blob);
+					document.getElementById('api').innerHTML =
+						'<a href="' + blobUrl + '" target="_blank">GeoJSON</a>';
+				} else {
+					document.getElementById('status').innerHTML = 'No results found';
+				}
+			}).catch(function(err) {
+				document.getElementById('status').innerHTML = 'Error: ' + err.message;
+				console.error(err);
+			});
+		}
+
+		function go() {
+			document.getElementById('status').innerHTML = '';
+			document.getElementById('api').innerHTML = '';
+			clear_map();
+
+			var data = document.getElementById('data').value;
+			if (data != '') {
+				data = data.replace(/\s+$/, '');
+				document.getElementById('status').innerHTML = 'Searching...';
+				show_map(data);
+			}
+		}
+
+		// --- JSON API mode: output raw GeoJSON instead of rendering map ---
+		function search_json(q) {
+			search_gbif(q).then(function(data) {
+				var dataFeatures = data.features.filter(function(f) {
+					return !f.properties._visual;
+				});
+				var apiData = {
+					geocoding: data.geocoding,
+					type: "FeatureCollection",
+					bbox: data.bbox,
+					features: dataFeatures
+				};
+				document.body.innerHTML =
+					'<pre class="json-output">' +
+					JSON.stringify(apiData, null, 2)
+						.replace(/&/g, '&amp;')
+						.replace(/</g, '&lt;')
+						.replace(/>/g, '&gt;') +
+					'</pre>';
+				// Set content type hint via title
+				document.title = 'GBIF Geocoder — JSON';
+			}).catch(function(err) {
+				document.body.innerHTML =
+					'<pre class="json-output">' +
+					JSON.stringify({ error: err.message }, null, 2) +
+					'</pre>';
+			});
+		}
+
+		function getUrlParam(name) {
+			var results = new RegExp('[\\?&]' + name + '=([^&#]*)').exec(window.location.href);
+			if (results == null) return null;
+			return results[1] || 0;
+		}
+	</script>
+</head>
+<body style="display:flex;flex-direction:column;">
+<header>
+	<h1>GBIF Geocoder</h1>
+	<div class="search-box">
+		<textarea id="data" rows="1">Cambodia: Ratanakiri Province, Virachey National Park</textarea>
+		<button onclick="go()">Search</button>
+	</div>
+</header>
+<div class="description-bar">
+	Geocode locality strings using <a href="https://www.gbif.org" target="_blank">GBIF</a> occurrence data. <a href="https://github.com/rdmpage/gbif-geocoder" target="_blank">GitHub</a>
+</div>
+<div class="info-bar">
+	<span id="status"></span>
+	<span id="api"></span>
+</div>
+<div id="map"></div>
+
+<script>
+	// Submit on Enter key (without Shift held, so Shift+Enter still adds a newline)
+	document.getElementById('data').addEventListener('keydown', function(e) {
+		if (e.key === 'Enter' && !e.shiftKey) {
+			e.preventDefault();
+			go();
+		}
+	});
+
+	var format = getUrlParam('format');
+	var query = getUrlParam('q');
+	if (format === 'json' && query) {
+		// API mode: skip map, output raw GeoJSON
+		search_json(decodeURIComponent(query));
+	} else {
+		// Normal web mode
+		create_map();
+		if (query) {
+			query = decodeURIComponent(query);
+			document.getElementById('data').value = query;
+			go();
+		}
+	}
+</script>
+</body>
+</html>
