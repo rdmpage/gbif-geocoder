@@ -2,6 +2,7 @@
 <html>
 <head>
 	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>GBIF geocoder</title>
 	<style type="text/css">
 		* { box-sizing: border-box; }
@@ -128,6 +129,36 @@
 			word-wrap: break-word;
 			background: #fff;
 			color: #333;
+		}
+
+		/* Copy link action */
+		.copy-link {
+			cursor: pointer;
+		}
+
+		/* --- Mobile responsive --- */
+		@media (max-width: 600px) {
+			header {
+				padding: 10px 12px;
+				gap: 8px;
+			}
+			header h1 {
+				font-size: 1.1em;
+			}
+			.search-box {
+				min-width: auto;
+				width: 100%;
+			}
+			.description-bar {
+				padding: 5px 12px;
+				font-size: 0.75em;
+			}
+			.info-bar {
+				padding: 5px 12px;
+				gap: 8px;
+				font-size: 0.8em;
+				flex-wrap: wrap;
+			}
 		}
 
 		/* --- Dark mode --- */
@@ -658,7 +689,8 @@
 					);
 					var blobUrl = URL.createObjectURL(blob);
 					document.getElementById('api').innerHTML =
-						'<a href="' + blobUrl + '" target="_blank">GeoJSON</a>';
+						'<a href="' + blobUrl + '" target="_blank">GeoJSON</a>' +
+						' &middot; <a href="#" class="copy-link" onclick="event.preventDefault();copyShareLink(this)">Link</a>';
 				} else {
 					document.getElementById('status').innerHTML = 'No results found';
 				}
@@ -666,6 +698,39 @@
 				document.getElementById('status').innerHTML = 'Error: ' + err.message;
 				console.error(err);
 			});
+		}
+
+		function copyShareLink(el) {
+			var q = document.getElementById('data').value.replace(/\s+$/, '');
+			var url = window.location.origin + window.location.pathname + '?q=' + encodeURIComponent(q);
+			var done = function() {
+				el.textContent = 'Copied!';
+				setTimeout(function() { el.textContent = 'Link'; }, 1500);
+			};
+			if (navigator.clipboard && navigator.clipboard.writeText) {
+				navigator.clipboard.writeText(url).then(done).catch(function() {
+					// Fallback for HTTP / older browsers
+					var ta = document.createElement('textarea');
+					ta.value = url;
+					ta.style.position = 'fixed';
+					ta.style.opacity = '0';
+					document.body.appendChild(ta);
+					ta.select();
+					try { document.execCommand('copy'); } catch(e) {}
+					document.body.removeChild(ta);
+					done();
+				});
+			} else {
+				var ta = document.createElement('textarea');
+				ta.value = url;
+				ta.style.position = 'fixed';
+				ta.style.opacity = '0';
+				document.body.appendChild(ta);
+				ta.select();
+				try { document.execCommand('copy'); } catch(e) {}
+				document.body.removeChild(ta);
+				done();
+			}
 		}
 
 		function go() {
@@ -677,6 +742,7 @@
 			if (data != '') {
 				data = data.replace(/\s+$/, '');
 				document.getElementById('status').innerHTML = 'Searching...';
+				history.replaceState(null, '', '?q=' + encodeURIComponent(data));
 				show_map(data);
 			}
 		}
