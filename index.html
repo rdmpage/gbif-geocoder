@@ -115,7 +115,7 @@
 			box-shadow: none !important;
 		}
 		.leaflet-popup-content {
-			font-size: 0.85em;
+			font-size: 1em;
 			line-height: 1.5;
 		}
 		/* JSON API output mode */
@@ -456,10 +456,28 @@
 		}
 
 		// --- Build popup HTML from clean Pelias-style properties ---
-		function buildPopup(props) {
+		// Convert decimal degrees to degrees, minutes, seconds string
+		function toDMS(dd, isLat) {
+			var dir = isLat ? (dd >= 0 ? 'N' : 'S') : (dd >= 0 ? 'E' : 'W');
+			var abs = Math.abs(dd);
+			var d = Math.floor(abs);
+			var minfloat = (abs - d) * 60;
+			var m = Math.floor(minfloat);
+			var s = ((minfloat - m) * 60).toFixed(1);
+			return d + '\u00B0' + m + '\u2032' + s + '\u2033' + dir;
+		}
+
+		function buildPopup(feature) {
+			var props = feature.properties;
+			var coords = feature.geometry.coordinates;
+			var lng = coords[0];
+			var lat = coords[1];
+
 			var html = '<b>' + (props.label || props.name || '') + '</b>';
 			html += '<br/><span style="color:#666">' + props.layer + '</span>';
 			html += ' &middot; confidence: <b>' + props.confidence + '</b>';
+			html += '<br/>' + lat.toFixed(4) + ', ' + lng.toFixed(4);
+			html += '<br/>' + toDMS(lat, true) + ' ' + toDMS(lng, false);
 			if (props.matched_terms && props.matched_terms.length > 0) {
 				html += '<br/>matched: ' + props.matched_terms.join(', ');
 			}
@@ -479,7 +497,7 @@
 
 		function onEachFeature(feature, layer) {
 			if (feature.properties && feature.properties.confidence !== undefined) {
-				layer.bindPopup(buildPopup(feature.properties));
+				layer.bindPopup(buildPopup(feature));
 			}
 		}
 
