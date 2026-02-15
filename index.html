@@ -329,15 +329,16 @@
 		// --- Geographic hierarchy levels with specificity weights ---
 		// More specific levels get higher weight
 		var GEO_LEVELS = [
-			{ key: 'continent',      weight: 0.1, layer: 'continent' },
-			{ key: 'country',        weight: 0.2, layer: 'country' },
-			{ key: 'waterBody',      weight: 0.5, layer: 'water_body' },
-			{ key: 'islandGroup',    weight: 0.5, layer: 'island_group' },
-			{ key: 'island',         weight: 0.6, layer: 'island' },
-			{ key: 'stateProvince',  weight: 0.5, layer: 'region' },
-			{ key: 'county',         weight: 0.6, layer: 'county' },
-			{ key: 'municipality',   weight: 0.7, layer: 'locality' },
-			{ key: 'locality',       weight: 1.0, layer: 'locality' }
+			{ key: 'continent',         weight: 0.1, layer: 'continent' },
+			{ key: 'country',           weight: 0.2, layer: 'country' },
+			{ key: 'waterBody',         weight: 0.5, layer: 'water_body' },
+			{ key: 'islandGroup',       weight: 0.5, layer: 'island_group' },
+			{ key: 'island',            weight: 0.6, layer: 'island' },
+			{ key: 'stateProvince',     weight: 0.5, layer: 'region' },
+			{ key: 'county',            weight: 0.6, layer: 'county' },
+			{ key: 'municipality',      weight: 0.7, layer: 'locality' },
+			{ key: 'locality',          weight: 1.0, layer: 'locality' },
+			{ key: 'verbatimLocality',  weight: 1.0, layer: 'locality' }
 		];
 
 		// Fuzzy threshold: below this similarity, don't count as a match
@@ -611,6 +612,7 @@
 						if (r.waterBody)     props.water_body = r.waterBody;
 						if (r.island)        props.island = r.island;
 						if (r.islandGroup)   props.island_group = r.islandGroup;
+						if (r.verbatimLocality) props.verbatim_locality = r.verbatimLocality;
 
 						// Coordinate metadata
 						if (r.coordinateUncertaintyInMeters) {
