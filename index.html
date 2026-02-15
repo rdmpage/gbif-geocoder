@@ -529,7 +529,7 @@
 					L.latLng(data.bbox[1], data.bbox[0]),
 					L.latLng(data.bbox[3], data.bbox[2])
 				);
-				map.fitBounds(bounds, { padding: [20, 20] });
+				map.fitBounds(bounds, { padding: [30, 30] });
 			}
 		}
 
@@ -657,6 +657,8 @@
 								circle.properties.style = { color: "#1b6ec2", weight: 2, fillColor: "#1b6ec2", "fill-opacity": 0.15 };
 								circle.properties._visual = true; // mark as non-data feature
 								geojson.features.push(circle);
+								// Update bbox to encompass the full circle (not just the points)
+								geojson.bbox = turf.bbox(circle);
 							}
 						}
 					}
