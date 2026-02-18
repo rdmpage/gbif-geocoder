@@ -1,5 +1,7 @@
 # GBIF Geocoder
 
+[![DOI](https://zenodo.org/badge/1158146924.svg)](https://doi.org/10.5281/zenodo.18678262)
+
 Geocode locality strings using [GBIF](https://www.gbif.org) occurrence data.
 
 **Live demo:** https://rdmpage.github.io/gbif-geocoder/
