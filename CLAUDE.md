@@ -51,7 +51,8 @@ search_gbif(query)
   |     |-- findMostSpecificName(result): extract primary place name
   |     |-- Create Pelias-style GeoJSON Feature with properties
   |-- Sort features by confidence descending
-  |-- Compute bounding box from point coordinates
+  |-- Filter out low-confidence outliers (confidence < bestConfidence * 0.65)
+  |-- Compute bounding box from remaining point coordinates
   |-- Compute bounding circle: turf.centerOfMass() + turf.distance() + turf.circle()
   |-- Update bbox to encompass full circle via turf.bbox(circle)
   |-- Return GeoJSON FeatureCollection
@@ -119,6 +120,8 @@ Each GBIF result field is assigned a specificity weight. Higher weight = more sp
 7. **Pelias-style GeoJSON output** -- Following the [Pelias geocoder](https://pelias.io/) response format makes the output familiar and interoperable with other geocoding tools.
 
 8. **All code in one file** -- Keeps the project simple and deployable as a single HTML file. No module system, no imports, no build step.
+
+9. **Low-confidence filtering** -- After scoring, results with confidence below 65% of the best result's confidence are filtered out before computing the bounding circle. This prevents low-scoring outliers (e.g. a state-level match when the best result is a precise locality match) from inflating the circle and pulling the map view away from the best results. The threshold is relative rather than absolute so that vague queries still show results.
 
 ## URL parameters
 

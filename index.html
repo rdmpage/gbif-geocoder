@@ -344,6 +344,10 @@
 		// Fuzzy threshold: below this similarity, don't count as a match
 		var FUZZY_THRESHOLD = 0.7;
 
+		// Minimum confidence as a fraction of the best result's confidence.
+		// Results below this are filtered out before computing the bounding circle.
+		var CONFIDENCE_RATIO_THRESHOLD = 0.65;
+
 		// --- Compute confidence score for a GBIF result against query ---
 		function computeConfidence(queryWords, result) {
 			var qset = removeStopWords(queryWords);
@@ -652,6 +656,16 @@
 					geojson.features.sort(function(a, b) {
 						return b.properties.confidence - a.properties.confidence;
 					});
+
+					// Filter out low-confidence outliers before computing bounding geometry.
+					// Keep results whose confidence is at least CONFIDENCE_RATIO_THRESHOLD of the best result.
+					if (geojson.features.length > 1) {
+						var bestConfidence = geojson.features[0].properties.confidence;
+						var threshold = bestConfidence * CONFIDENCE_RATIO_THRESHOLD;
+						geojson.features = geojson.features.filter(function(f) {
+							return f.properties.confidence >= threshold;
+						});
+					}
 
 					// Post-process: compute bbox from points and optional bounding circle
 					if (geojson.features.length > 0) {
